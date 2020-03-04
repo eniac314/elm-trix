@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+  <!-- <link rel="stylesheet" href="css/fonts.css"> -->
+  <link rel="stylesheet" type="text/css" href="css/trix.css">
+  <script type="text/javascript" src="js/trix.js"></script>
+  <script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+	<div id="elm-node"></div>
+  <script type="text/javascript">
+    
+
+    var currentTime = new Date().getTime();
+    var width = window.innerWidth;
+    var height = window.innerHeight;	
+
+
+    Trix.config.textAttributes.red = {
+      style: { color: "red" },
+      parser: function(element) {
+        return element.style.color === "red"
+      },
+      inheritable: true
+    };
+     
+    Trix.config.textAttributes.green = { 
+      style: { color: "green" },
+      tagName:"green",
+      inheritable: true
+     }
+
+    Trix.config.textAttributes.word = { 
+      style: { color: "green" },
+      tagName:"word",
+      inheritable: true
+     }
+
+     Trix.config.textAttributes.foregroundColor = {
+        styleProperty: "color",
+        inheritable: 1
+     }
+
+     Trix.config.textAttributes.textFont = {
+        styleProperty: "font-family",
+        inheritable: 1
+     }
+
+     
+    addEventListener("trix-initialize", function(event) {  
+      // var buttonHTML = '<button type="button" data-trix-attribute="red">red</button>'
+
+      // buttonHTML += '<button type="button" data-trix-attribute="green">green</button>'
+
+      // console.log(event.target.toolbarElement);
+
+      // event.target.toolbarElement.
+      //   querySelector(".button_group.text_tools").
+      //   insertAdjacentHTML("beforeend", buttonHTML)
+       
+
+       var element = document.querySelector("trix-editor");
+       element.editor.insertString("Hello world");
+       // element.editor.setSelectedRange([1, 5]);
+       // element.editor.activateAttribute("foregroundColor", "blue");
+       // element.editor.setSelectedRange([3, 8]);
+       // element.editor.activateAttribute("textFont", "verdana");
+       // element.editor.setSelectedRange([1, 10 ]); 
+       // element.editor.deactivateAttribute("foregroundColor");
+
+       // element.editor.addEventListener("trix-selection-change")
+    })
+
+    var app = 
+       Elm.Main.init({
+        node: document.getElementById("elm-node"),
+        flags: {currentTime: currentTime, width: width, height: height}
+
+    });
+
+    app.ports.activateAttribute.subscribe(function(data){
+      var element = document.querySelector("trix-editor");
+      // console.log(data);
+      if(element){
+        element.editor.recordUndoEntry("activate custom attribute: " + data.attribute);
+        element.editor.setSelectedRange([data.selectionStart, data.selectionEnd]);
+        element.editor.activateAttribute(data.attribute, data.value);
+
+        sendSelection();
+      }
+    });
+
+    app.ports.insertHtml.subscribe(function(data){
+      var element = document.querySelector("trix-editor");
+      // console.log(data);
+      if(element){
+        element.editor.recordUndoEntry("inserting custom html: " + data.tagName);
+        element.editor.setSelectedRange([data.selectionStart, data.selectionEnd]);
+        // element.editor.deleteInDirection("forward");
+        // element.editor.setSelectedRange([data.selectionStart, data.selectionStart]);
+        element.editor.insertHTML(data.html);
+
+        sendSelection();
+      }
+    });
+
+    app.ports.getSelection.subscribe(function(){
+      sendSelection();
+    });
+    
+    function sendSelection(){
+      var element = document.querySelector("trix-editor");
+      if(element){
+        // console.log(JSON.stringify(element.editor.getDocument()));
+        // console.log(JSON.stringify(element.editor.getDocument().getCommonAttributesAtRange(element.editor.getSelectedRange())));
+        var selectedRange = element.editor.getSelectedRange(); 
+        var selection = 
+          { start : selectedRange[0]
+          , end : selectedRange[1]
+          , attrs : element.editor.getDocument().getCommonAttributesAtRange(selectedRange)
+          };
+        console.log(selection);
+        app.ports.selection.send(selection);
+      }
+    }; 
+
+    console.log(Trix.config);
+
+  </script>
+  
+   
+</body>
+
+</html>
+
