@@ -7,6 +7,19 @@
   <link rel="stylesheet" type="text/css" href="css/trix.css">
   <script type="text/javascript" src="js/trix.js"></script>
   <script type="text/javascript" src="js/main.js"></script>
+  <style type="text/css">
+    trix-editor .attachment__metadata {
+      display: none;
+    }
+    trix-toolbar .trix-button-group--file-tools{
+      display: none;
+    }
+    /*trix-toolbar .trix-button--icon-attach {
+      display: none;
+    }*/
+
+
+  </style>
 </head>
 <body>
 	<div id="elm-node"></div>
@@ -17,6 +30,7 @@
     var width = window.innerWidth;
     var height = window.innerHeight;	
 
+    Trix.config.attachments.preview.caption = { name: false, size: false };
 
     Trix.config.textAttributes.red = {
       style: { color: "red" },
@@ -38,17 +52,42 @@
       inheritable: true
      }
 
-     Trix.config.textAttributes.foregroundColor = {
+    Trix.config.textAttributes.span = { tagName: "span" };
+
+    Trix.config.textAttributes.foregroundColor = {
         styleProperty: "color",
         inheritable: 1
-     }
+    }
 
-     Trix.config.textAttributes.textFont = {
+    Trix.config.textAttributes.backgroundColor = {
+        styleProperty: "background-color",
+        inheritable: 1
+    }
+
+    Trix.config.textAttributes.textFont = {
         styleProperty: "font-family",
         inheritable: 1
+    }
+
+    Trix.config.textAttributes.float = {
+        styleProperty: "float",
+        inheritable: 1
+    }
+
+    Trix.config.blockAttributes.heading2 = {
+        tagName: 'h2',
+        terminal: true,
+        breakOnReturn: true,
+        group: false
+    } //https://github.com/basecamp/trix/issues/565
+     
+    Trix.config.blockAttributes.picContainer = {
+        tagName: 'picContainer',
+        terminal: true,
+        breakOnReturn: true,
+        group: false
      }
 
-     
     addEventListener("trix-initialize", function(event) {  
       // var buttonHTML = '<button type="button" data-trix-attribute="red">red</button>'
 
@@ -59,18 +98,35 @@
       // event.target.toolbarElement.
       //   querySelector(".button_group.text_tools").
       //   insertAdjacentHTML("beforeend", buttonHTML)
+
+      Trix.config.blockAttributes.default.tagName = 'p';
        
 
-       var element = document.querySelector("trix-editor");
-       element.editor.insertString("Hello world");
-       // element.editor.setSelectedRange([1, 5]);
-       // element.editor.activateAttribute("foregroundColor", "blue");
-       // element.editor.setSelectedRange([3, 8]);
-       // element.editor.activateAttribute("textFont", "verdana");
-       // element.editor.setSelectedRange([1, 10 ]); 
-       // element.editor.deactivateAttribute("foregroundColor");
+      var element = document.querySelector("trix-editor");
+      element.editor.insertString("Hello world");
+      element.editor.insertLineBreak();
+      element.editor.insertHTML('<picContainer>test</picContainer>');
+      // element.editor.setSelectedRange([12, 16]);
+      // element.editor.activateAttribute("float", "left");
+      element.editor.insertLineBreak();
+      element.editor.insertHTML('<picContainer><img src="https://s14-eu5.startpage.com/wikioimage/5c5cdc254ff34ff9d620f47cb88c3d0b.png" alt="elm logo"></picContainer>');
+      element.editor.insertLineBreak();
+      // element.editor.setSelectedRange([17, 18]);
+      // element.editor.activateAttribute("float", "left");
 
-       // element.editor.addEventListener("trix-selection-change")
+      element.editor.insertString("Content attachments are self-contained units of HTML that behave like files in the editor. They can be moved or removed, but not edited directly, and are represented by a single character position in the document model.To insert HTML as an attachment, create a Trix.Attachment with a content attribute and call the editor.insertAttachment method. The HTML inside a content attachment is not subject to Trix’s document conversion rules and will be rendered as-is.");
+       
+     
+      // element.editor.insertAttachment(attachment);
+
+      // element.editor.setSelectedRange([1, 5]);
+      // element.editor.activateAttribute("foregroundColor", "blue");
+      // element.editor.setSelectedRange([3, 8]);
+      // element.editor.activateAttribute("textFont", "verdana");
+      // element.editor.setSelectedRange([1, 10 ]); 
+      // element.editor.deactivateAttribute("foregroundColor");
+
+      // element.editor.addEventListener("trix-selection-change")
     })
 
     var app = 
@@ -88,6 +144,19 @@
         element.editor.setSelectedRange([data.selectionStart, data.selectionEnd]);
         element.editor.activateAttribute(data.attribute, data.value);
 
+        sendSelection();
+      }
+    });
+
+    app.ports.deactivateAttributes.subscribe(function(data){
+      var element = document.querySelector("trix-editor");
+      // console.log(data);
+      if(element){
+        element.editor.recordUndoEntry("deactivate attribute");
+        element.editor.setSelectedRange([data.selectionStart, data.selectionEnd]);
+        for (attr of data.attributes) {
+          element.editor.deactivateAttribute(attr);
+        }
         sendSelection();
       }
     });
@@ -129,6 +198,7 @@
     console.log(Trix.config);
 
   </script>
+  
   
    
 </body>

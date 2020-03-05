@@ -14,7 +14,7 @@ import File exposing (..)
 import Hex exposing (..)
 import Html as Html
 import Html.Attributes as HtmlAttr
-import Html.Events exposing (on)
+import Html.Events as HtmlEvents exposing (on, onInput)
 import Html.Parser exposing (..)
 import Html.Parser.Util exposing (..)
 import Json.Decode as D
@@ -24,6 +24,9 @@ import Url as Url exposing (..)
 
 
 port activateAttribute : E.Value -> Cmd msg
+
+
+port deactivateAttributes : E.Value -> Cmd msg
 
 
 port insertHtml : E.Value -> Cmd msg
@@ -116,7 +119,13 @@ type Msg
     | OpenInternalLinks
     | InsertInternalLink String
     | OpenFontColorPicker
+    | OpenBackgroundColorPicker
     | SetTextColor String
+    | SetBackgroundColor String
+    | SetFont String
+    | SetFontSize Int
+    | ToogleJustify
+    | UndoStyle
     | Close
     | DebugEvent E.Value
     | NoOp
@@ -126,7 +135,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GetHtmlContent content ->
-            ( { model | htmlContent = content }, Cmd.none )
+            ( { model | htmlContent = content }, getSelection () )
 
         GetSelection ->
             ( model, getSelection () )
@@ -200,6 +209,18 @@ update msg model =
             , Cmd.none
             )
 
+        OpenBackgroundColorPicker ->
+            ( { model
+                | openedWidget =
+                    if model.openedWidget == Just BackgroundColorPicker then
+                        Nothing
+
+                    else
+                        Just BackgroundColorPicker
+              }
+            , Cmd.none
+            )
+
         SetTextColor color ->
             case model.selection of
                 Just { start, end, attrs } ->
@@ -217,6 +238,65 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        SetBackgroundColor color ->
+            case model.selection of
+                Just { start, end, attrs } ->
+                    let
+                        data =
+                            E.object
+                                [ ( "selectionStart", E.int start )
+                                , ( "selectionEnd", E.int end )
+                                , ( "attribute", E.string "backgroundColor" )
+                                , ( "value", E.string ("#" ++ (Dict.get color webColors |> Maybe.withDefault "000000")) )
+                                ]
+                    in
+                    ( { model | openedWidget = Nothing }, activateAttribute data )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        SetFont font ->
+            case model.selection of
+                Just { start, end, attrs } ->
+                    let
+                        data =
+                            E.object
+                                [ ( "selectionStart", E.int start )
+                                , ( "selectionEnd", E.int end )
+                                , ( "attribute", E.string "textFont" )
+                                , ( "value", E.string font )
+                                ]
+                    in
+                    ( { model | openedWidget = Nothing }, activateAttribute data )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        SetFontSize n ->
+            ( model, Cmd.none )
+
+        ToogleJustify ->
+            ( model, Cmd.none )
+
+        UndoStyle ->
+            case model.selection of
+                Just { start, end, attrs } ->
+                    let
+                        data =
+                            E.object
+                                [ ( "selectionStart", E.int start )
+                                , ( "selectionEnd", E.int end )
+                                , ( "attributes"
+                                  , Dict.keys attrs
+                                        |> E.list E.string
+                                  )
+                                ]
+                    in
+                    ( { model | openedWidget = Nothing }, deactivateAttributes data )
+
+                _ ->
+                    ( model, Cmd.none )
+
         DebugEvent v ->
             ( { model | debugEvent = Just v }, Cmd.none )
 
@@ -225,24 +305,44 @@ update msg model =
 
 
 view model =
-    Element.layout
+    Html.div
         []
-        (column
-            [ width fill
-            , spacing 30
+        [ Html.node "style"
+            []
+            [ Html.text <|
+                """ .trix-content{
+                        text-align: justify;
+                    }
+                    
+                """
             ]
-            [ editor model
+        , Element.layout
+            []
+            (column
+                [ width (maximum 1000 fill)
+                , spacing 30
+                ]
+                [ editor model
 
-            --, el
-            --    []
-            --    (html <| Html.pre [] [ Html.text <| Debug.log "debug event: " (Debug.toString (Maybe.map decodeValue model.debugEvent)) ])
-            , renderer model
-            ]
-        )
+                --, el
+                --    []
+                --    (html <| Html.pre [] [ Html.text <| Debug.log "debug event: " (Debug.toString (Maybe.map decodeValue model.debugEvent)) ])
+                , renderer model
+                ]
+            )
+        ]
 
 
 editor model =
     let
+        selectionCollapsed =
+            case model.selection of
+                Nothing ->
+                    Nothing
+
+                Just { start, end } ->
+                    Just (start == end)
+
         selectionAttrs =
             Maybe.map .attrs model.selection
 
@@ -251,19 +351,54 @@ editor model =
                 |> Maybe.map (String.dropLeft 1)
                 |> Maybe.andThen (\hex -> Dict.get hex webColorsReversed)
 
+        backgroundColor =
+            Maybe.andThen (Dict.get "backgroundColor") selectionAttrs
+                |> Maybe.map (String.dropLeft 1)
+                |> Maybe.andThen (\hex -> Dict.get hex webColorsReversed)
+
+        textFont =
+            Maybe.andThen (Dict.get "textFont") selectionAttrs
+
+        fontOptionView selectedFont f =
+            Html.option
+                [ HtmlAttr.value f
+                , HtmlAttr.selected (selectedFont == (Just <| f))
+                ]
+                [ Html.text f ]
+
         customControls =
             row
                 [ spacing 10 ]
                 [ colorPicker
                     "fontColorPicker"
                     True
-                    -- (canCustomStyleSelection model)
                     (model.openedWidget == Just FontColorPicker)
                     fontColor
-                    --(extractAttr extractColor model.articleStyle model.selectionStyle)
                     OpenFontColorPicker
                     SetTextColor
-                    "Set text color"
+                    "text"
+                , colorPicker
+                    "backgroundColorPicker"
+                    True
+                    (model.openedWidget == Just BackgroundColorPicker)
+                    backgroundColor
+                    OpenBackgroundColorPicker
+                    SetBackgroundColor
+                    "back"
+                , el
+                    []
+                    (html <|
+                        Html.select
+                            [ HtmlEvents.onInput SetFont
+                            , HtmlAttr.disabled (selectionCollapsed == Just True || selectionCollapsed == Nothing)
+                            ]
+                            (List.map
+                                (fontOptionView
+                                    textFont
+                                )
+                                (List.sort fonts)
+                            )
+                    )
                 , linkPicker
                     "internalLinkPicker"
                     True
@@ -273,26 +408,44 @@ editor model =
                     OpenInternalLinks
                     InsertInternalLink
                     [ "home", "contact" ]
+                , let
+                    canUndoStyle =
+                        selectionAttrs /= Just Dict.empty
+                  in
+                  Input.button
+                    (buttonStyle canUndoStyle)
+                    { onPress =
+                        if canUndoStyle then
+                            Just UndoStyle
+
+                        else
+                            Nothing
+                    , label =
+                        text "undo style"
+                    }
 
                 --config.pageList
                 ]
     in
     column
-        [ width fill
-        , padding 15
+        [ padding 15
         , spacing 10
+
+        --, Background.color (rgb255 123 45 70)
         ]
         [ customControls
-        , el [] (html <| trixEditor)
+        , paragraph [] [ html <| trixEditor ]
         ]
 
 
 trixEditor =
     Html.node "trix-editor"
         [ on "trix-change" (D.map GetHtmlContent decodeEditorMarkup)
-        , on "trix-selection-change" (D.map (always GetSelection) (D.succeed ())) --(D.map GetSelection decodeSelection)
+        , on "trix-selection-change" (D.map (always GetSelection) (D.succeed ()))
+        , HtmlAttr.class "trix-content"
 
         --, on "trix-attachment-add" (Decode.map mapAttachmentToMsg decodeDroppedFile)
+        --, HtmlAttr.attribute "white-space" "normal"
         ]
         []
 
@@ -302,9 +455,10 @@ renderer model =
         content =
             Html.Parser.run model.htmlContent.html
                 |> Result.map (List.map processLinks)
+                |> Result.map (List.map resetFiguresStyle)
                 |> Result.map Html.Parser.Util.toVirtualDom
-                |> Result.map (Html.div [])
-                |> Result.map (\r -> el [] (html r))
+                |> Result.map (Html.div [ HtmlAttr.class "trix-content" ])
+                |> Result.map (\r -> paragraph [] [ html r ])
                 |> Result.withDefault Element.none
     in
     el
@@ -338,6 +492,40 @@ processLinks node =
 
         Element tag attrs nodes ->
             Element tag attrs (List.map processLinks nodes)
+
+        Text value ->
+            Text value
+
+        Comment value ->
+            Comment value
+
+
+resetFiguresStyle node =
+    let
+        removeAttrs attrs =
+            List.foldr
+                (\( attr, value ) acc ->
+                    if List.member attr toRemove then
+                        acc
+
+                    else
+                        ( attr, value ) :: acc
+                )
+                []
+                attrs
+
+        toRemove =
+            [ "class", "data-trix-attachment", "data-trix-content-type", "data-trix-attributes" ]
+    in
+    case node of
+        Element "figure" attrs nodes ->
+            Element "figure" (removeAttrs attrs) (List.map resetFiguresStyle nodes)
+
+        Element "figcaption" attrs nodes ->
+            Element "figcaption" (removeAttrs attrs) (List.map resetFiguresStyle nodes)
+
+        Element tag attrs nodes ->
+            Element tag attrs (List.map resetFiguresStyle nodes)
 
         Text value ->
             Text value
@@ -775,6 +963,59 @@ webColors =
 
 
 -------------------------------------------------------------------------------
+
+
+fonts =
+    [ "Arial"
+    , "Helvetica"
+    , "Times New Roman"
+    , "Times"
+    , "Courier New"
+    , "Courier"
+    , "Verdana"
+    , "Georgia"
+    , "Palatino"
+    , "Garamond"
+    , "Bookman"
+    , "Comic Sans MS"
+    , "Trebuchet MS"
+    , "Arial Black"
+    , "Impact"
+    , "Libre Baskerville"
+    ]
+
+
+fontSizes =
+    [ "6"
+    , "7"
+    , "8"
+    , "9"
+    , "10"
+    , "11"
+    , "12"
+    , "13"
+    , "14"
+    , "15"
+    , "16"
+    , "18"
+    , "20"
+    , "22"
+    , "24"
+    , "26"
+    , "28"
+    , "32"
+    , "36"
+    , "40"
+    , "44"
+    , "48"
+    , "54"
+    , "60"
+    , "66"
+    , "72"
+    , "80"
+    , "88"
+    , "96"
+    ]
 
 
 chunks : Int -> List a -> List (List a)

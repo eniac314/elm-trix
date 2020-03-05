@@ -10936,9 +10936,11 @@ var $author$project$Main$subscriptions = function (model) {
 				$author$project$Main$selection($author$project$Main$GotSelection)
 			]));
 };
+var $author$project$Main$BackgroundColorPicker = {$: 'BackgroundColorPicker'};
 var $author$project$Main$FontColorPicker = {$: 'FontColorPicker'};
 var $author$project$Main$InternalLinks = {$: 'InternalLinks'};
 var $author$project$Main$activateAttribute = _Platform_outgoingPort('activateAttribute', $elm$core$Basics$identity);
+var $author$project$Main$deactivateAttributes = _Platform_outgoingPort('deactivateAttributes', $elm$core$Basics$identity);
 var $author$project$Main$Selection = F3(
 	function (start, end, attrs) {
 		return {attrs: attrs, end: end, start: start};
@@ -11133,7 +11135,7 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{htmlContent: content}),
-					$elm$core$Platform$Cmd$none);
+					$author$project$Main$getSelection(_Utils_Tuple0));
 			case 'GetSelection':
 				return _Utils_Tuple2(
 					model,
@@ -11214,6 +11216,16 @@ var $author$project$Main$update = F2(
 								$elm$core$Maybe$Just($author$project$Main$FontColorPicker)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just($author$project$Main$FontColorPicker)
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'OpenBackgroundColorPicker':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							openedWidget: _Utils_eq(
+								model.openedWidget,
+								$elm$core$Maybe$Just($author$project$Main$BackgroundColorPicker)) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just($author$project$Main$BackgroundColorPicker)
+						}),
+					$elm$core$Platform$Cmd$none);
 			case 'SetTextColor':
 				var color = msg.a;
 				var _v3 = model.selection;
@@ -11246,6 +11258,107 @@ var $author$project$Main$update = F2(
 							model,
 							{openedWidget: $elm$core$Maybe$Nothing}),
 						$author$project$Main$activateAttribute(data));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'SetBackgroundColor':
+				var color = msg.a;
+				var _v4 = model.selection;
+				if (_v4.$ === 'Just') {
+					var start = _v4.a.start;
+					var end = _v4.a.end;
+					var attrs = _v4.a.attrs;
+					var data = $elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'selectionStart',
+								$elm$json$Json$Encode$int(start)),
+								_Utils_Tuple2(
+								'selectionEnd',
+								$elm$json$Json$Encode$int(end)),
+								_Utils_Tuple2(
+								'attribute',
+								$elm$json$Json$Encode$string('backgroundColor')),
+								_Utils_Tuple2(
+								'value',
+								$elm$json$Json$Encode$string(
+									'#' + A2(
+										$elm$core$Maybe$withDefault,
+										'000000',
+										A2($elm$core$Dict$get, color, $author$project$Main$webColors))))
+							]));
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{openedWidget: $elm$core$Maybe$Nothing}),
+						$author$project$Main$activateAttribute(data));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'SetFont':
+				var font = msg.a;
+				var _v5 = model.selection;
+				if (_v5.$ === 'Just') {
+					var start = _v5.a.start;
+					var end = _v5.a.end;
+					var attrs = _v5.a.attrs;
+					var data = $elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'selectionStart',
+								$elm$json$Json$Encode$int(start)),
+								_Utils_Tuple2(
+								'selectionEnd',
+								$elm$json$Json$Encode$int(end)),
+								_Utils_Tuple2(
+								'attribute',
+								$elm$json$Json$Encode$string('textFont')),
+								_Utils_Tuple2(
+								'value',
+								$elm$json$Json$Encode$string(font))
+							]));
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{openedWidget: $elm$core$Maybe$Nothing}),
+						$author$project$Main$activateAttribute(data));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'SetFontSize':
+				var n = msg.a;
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			case 'ToogleJustify':
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			case 'UndoStyle':
+				var _v6 = model.selection;
+				if (_v6.$ === 'Just') {
+					var start = _v6.a.start;
+					var end = _v6.a.end;
+					var attrs = _v6.a.attrs;
+					var data = $elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'selectionStart',
+								$elm$json$Json$Encode$int(start)),
+								_Utils_Tuple2(
+								'selectionEnd',
+								$elm$json$Json$Encode$int(end)),
+								_Utils_Tuple2(
+								'attributes',
+								A2(
+									$elm$json$Json$Encode$list,
+									$elm$json$Json$Encode$string,
+									$elm$core$Dict$keys(attrs)))
+							]));
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{openedWidget: $elm$core$Maybe$Nothing}),
+						$author$project$Main$deactivateAttributes(data));
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
@@ -16588,11 +16701,19 @@ var $mdgriffith$elm_ui$Element$column = F2(
 var $author$project$Main$InsertInternalLink = function (a) {
 	return {$: 'InsertInternalLink', a: a};
 };
+var $author$project$Main$OpenBackgroundColorPicker = {$: 'OpenBackgroundColorPicker'};
 var $author$project$Main$OpenFontColorPicker = {$: 'OpenFontColorPicker'};
 var $author$project$Main$OpenInternalLinks = {$: 'OpenInternalLinks'};
+var $author$project$Main$SetBackgroundColor = function (a) {
+	return {$: 'SetBackgroundColor', a: a};
+};
+var $author$project$Main$SetFont = function (a) {
+	return {$: 'SetFont', a: a};
+};
 var $author$project$Main$SetTextColor = function (a) {
 	return {$: 'SetTextColor', a: a};
 };
+var $author$project$Main$UndoStyle = {$: 'UndoStyle'};
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
 		if (maybeValue.$ === 'Just') {
@@ -16602,23 +16723,6 @@ var $elm$core$Maybe$andThen = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
-var $mdgriffith$elm_ui$Internal$Model$Nearby = F2(
-	function (a, b) {
-		return {$: 'Nearby', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
-var $mdgriffith$elm_ui$Element$createNearby = F2(
-	function (loc, element) {
-		if (element.$ === 'Empty') {
-			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-		} else {
-			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
-		}
-	});
-var $mdgriffith$elm_ui$Element$below = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
-};
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
@@ -16632,6 +16736,7 @@ var $elm$html$Html$Attributes$boolProperty = F2(
 			$elm$json$Json$Encode$bool(bool));
 	});
 var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
+var $mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
 var $mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
 	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
 		var _v1 = attr.b;
@@ -16807,6 +16912,10 @@ var $mdgriffith$elm_ui$Internal$Flag$focus = $mdgriffith$elm_ui$Internal$Flag$fl
 var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
+var $mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+	function (a, b) {
+		return {$: 'Nearby', a: a, b: b};
+	});
 var $mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
 	function (a, b) {
 		return {$: 'TransformComponent', a: a, b: b};
@@ -17077,6 +17186,18 @@ var $author$project$Main$buttonStyle = function (isActive) {
 				$mdgriffith$elm_ui$Element$Border$color(
 				A3($mdgriffith$elm_ui$Element$rgb, 0.95, 0.95, 0.95))
 			]));
+};
+var $mdgriffith$elm_ui$Internal$Model$Below = {$: 'Below'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
+	});
+var $mdgriffith$elm_ui$Element$below = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Below, element);
 };
 var $elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
@@ -17662,12 +17783,14 @@ var $author$project$Main$colorPicker = F7(
 					onPress: isActive ? $elm$core$Maybe$Just(openMsg) : $elm$core$Maybe$Nothing
 				}));
 	});
+var $author$project$Main$fonts = _List_fromArray(
+	['Arial', 'Helvetica', 'Times New Roman', 'Times', 'Courier New', 'Courier', 'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact', 'Libre Baskerville']);
+var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
+var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 	return {$: 'Fill', a: a};
 };
 var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
-var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
-var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $mdgriffith$elm_ui$Internal$Model$Max = F2(
 	function (a, b) {
 		return {$: 'Max', a: a, b: b};
@@ -17770,6 +17893,32 @@ var $author$project$Main$linkPicker = F7(
 					onPress: isActive ? $elm$core$Maybe$Just(openMsg) : $elm$core$Maybe$Nothing
 				}));
 	});
+var $elm$html$Html$option = _VirtualDom_node('option');
+var $mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
+var $mdgriffith$elm_ui$Element$paragraph = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asParagraph,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$Paragraph),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$spacing(5),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var $elm$html$Html$select = _VirtualDom_node('select');
+var $elm$html$Html$Attributes$selected = $elm$html$Html$Attributes$boolProperty('selected');
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$List$sort = function (xs) {
+	return A2($elm$core$List$sortBy, $elm$core$Basics$identity, xs);
+};
 var $author$project$Main$GetHtmlContent = function (a) {
 	return {$: 'GetHtmlContent', a: a};
 };
@@ -17802,7 +17951,8 @@ var $author$project$Main$trixEditor = A3(
 			A2(
 				$elm$json$Json$Decode$map,
 				$elm$core$Basics$always($author$project$Main$GetSelection),
-				$elm$json$Json$Decode$succeed(_Utils_Tuple0)))
+				$elm$json$Json$Decode$succeed(_Utils_Tuple0))),
+			$elm$html$Html$Attributes$class('trix-content')
 		]),
 	_List_Nil);
 var $author$project$Main$webColorsReversed = $elm$core$Dict$fromList(
@@ -17815,12 +17965,44 @@ var $author$project$Main$webColorsReversed = $elm$core$Dict$fromList(
 		},
 		$elm$core$Dict$toList($author$project$Main$webColors)));
 var $author$project$Main$editor = function (model) {
+	var selectionCollapsed = function () {
+		var _v0 = model.selection;
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var start = _v0.a.start;
+			var end = _v0.a.end;
+			return $elm$core$Maybe$Just(
+				_Utils_eq(start, end));
+		}
+	}();
 	var selectionAttrs = A2(
 		$elm$core$Maybe$map,
 		function ($) {
 			return $.attrs;
 		},
 		model.selection);
+	var textFont = A2(
+		$elm$core$Maybe$andThen,
+		$elm$core$Dict$get('textFont'),
+		selectionAttrs);
+	var fontOptionView = F2(
+		function (selectedFont, f) {
+			return A2(
+				$elm$html$Html$option,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$value(f),
+						$elm$html$Html$Attributes$selected(
+						_Utils_eq(
+							selectedFont,
+							$elm$core$Maybe$Just(f)))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(f)
+					]));
+		});
 	var fontColor = A2(
 		$elm$core$Maybe$andThen,
 		function (hex) {
@@ -17832,6 +18014,18 @@ var $author$project$Main$editor = function (model) {
 			A2(
 				$elm$core$Maybe$andThen,
 				$elm$core$Dict$get('foregroundColor'),
+				selectionAttrs)));
+	var backgroundColor = A2(
+		$elm$core$Maybe$andThen,
+		function (hex) {
+			return A2($elm$core$Dict$get, hex, $author$project$Main$webColorsReversed);
+		},
+		A2(
+			$elm$core$Maybe$map,
+			$elm$core$String$dropLeft(1),
+			A2(
+				$elm$core$Maybe$andThen,
+				$elm$core$Dict$get('backgroundColor'),
 				selectionAttrs)));
 	var customControls = A2(
 		$mdgriffith$elm_ui$Element$row,
@@ -17851,7 +18045,36 @@ var $author$project$Main$editor = function (model) {
 				fontColor,
 				$author$project$Main$OpenFontColorPicker,
 				$author$project$Main$SetTextColor,
-				'Set text color'),
+				'text'),
+				A7(
+				$author$project$Main$colorPicker,
+				'backgroundColorPicker',
+				true,
+				_Utils_eq(
+					model.openedWidget,
+					$elm$core$Maybe$Just($author$project$Main$BackgroundColorPicker)),
+				backgroundColor,
+				$author$project$Main$OpenBackgroundColorPicker,
+				$author$project$Main$SetBackgroundColor,
+				'back'),
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_Nil,
+				$mdgriffith$elm_ui$Element$html(
+					A2(
+						$elm$html$Html$select,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onInput($author$project$Main$SetFont),
+								$elm$html$Html$Attributes$disabled(
+								_Utils_eq(
+									selectionCollapsed,
+									$elm$core$Maybe$Just(true)) || _Utils_eq(selectionCollapsed, $elm$core$Maybe$Nothing))
+							]),
+						A2(
+							$elm$core$List$map,
+							fontOptionView(textFont),
+							$elm$core$List$sort($author$project$Main$fonts))))),
 				A7(
 				$author$project$Main$linkPicker,
 				'internalLinkPicker',
@@ -17863,13 +18086,24 @@ var $author$project$Main$editor = function (model) {
 				$author$project$Main$OpenInternalLinks,
 				$author$project$Main$InsertInternalLink,
 				_List_fromArray(
-					['home', 'contact']))
+					['home', 'contact'])),
+				function () {
+				var canUndoStyle = !_Utils_eq(
+					selectionAttrs,
+					$elm$core$Maybe$Just($elm$core$Dict$empty));
+				return A2(
+					$mdgriffith$elm_ui$Element$Input$button,
+					$author$project$Main$buttonStyle(canUndoStyle),
+					{
+						label: $mdgriffith$elm_ui$Element$text('undo style'),
+						onPress: canUndoStyle ? $elm$core$Maybe$Just($author$project$Main$UndoStyle) : $elm$core$Maybe$Nothing
+					});
+			}()
 			]));
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 				$mdgriffith$elm_ui$Element$padding(15),
 				$mdgriffith$elm_ui$Element$spacing(10)
 			]),
@@ -17877,9 +18111,12 @@ var $author$project$Main$editor = function (model) {
 			[
 				customControls,
 				A2(
-				$mdgriffith$elm_ui$Element$el,
+				$mdgriffith$elm_ui$Element$paragraph,
 				_List_Nil,
-				$mdgriffith$elm_ui$Element$html($author$project$Main$trixEditor))
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$html($author$project$Main$trixEditor)
+					]))
 			]));
 };
 var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
@@ -18209,6 +18446,70 @@ var $author$project$Main$processLinks = function (node) {
 					tag,
 					attrs,
 					A2($elm$core$List$map, $author$project$Main$processLinks, nodes));
+			}
+		case 'Text':
+			var value = node.a;
+			return $hecrj$html_parser$Html$Parser$Text(value);
+		default:
+			var value = node.a;
+			return $hecrj$html_parser$Html$Parser$Comment(value);
+	}
+};
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $author$project$Main$resetFiguresStyle = function (node) {
+	var toRemove = _List_fromArray(
+		['class', 'data-trix-attachment', 'data-trix-content-type', 'data-trix-attributes']);
+	var removeAttrs = function (attrs) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (_v1, acc) {
+					var attr = _v1.a;
+					var value = _v1.b;
+					return A2($elm$core$List$member, attr, toRemove) ? acc : A2(
+						$elm$core$List$cons,
+						_Utils_Tuple2(attr, value),
+						acc);
+				}),
+			_List_Nil,
+			attrs);
+	};
+	switch (node.$) {
+		case 'Element':
+			switch (node.a) {
+				case 'figure':
+					var attrs = node.b;
+					var nodes = node.c;
+					return A3(
+						$hecrj$html_parser$Html$Parser$Element,
+						'figure',
+						removeAttrs(attrs),
+						A2($elm$core$List$map, $author$project$Main$resetFiguresStyle, nodes));
+				case 'figcaption':
+					var attrs = node.b;
+					var nodes = node.c;
+					return A3(
+						$hecrj$html_parser$Html$Parser$Element,
+						'figcaption',
+						removeAttrs(attrs),
+						A2($elm$core$List$map, $author$project$Main$resetFiguresStyle, nodes));
+				default:
+					var tag = node.a;
+					var attrs = node.b;
+					var nodes = node.c;
+					return A3(
+						$hecrj$html_parser$Html$Parser$Element,
+						tag,
+						attrs,
+						A2($elm$core$List$map, $author$project$Main$resetFiguresStyle, nodes));
 			}
 		case 'Text':
 			var value = node.a;
@@ -18597,15 +18898,6 @@ var $hecrj$html_parser$Html$Parser$comment = A2(
 		$elm$parser$Parser$getChompedString(
 			$elm$parser$Parser$chompUntil('-->')),
 		$elm$parser$Parser$token('-->')));
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
 var $hecrj$html_parser$Html$Parser$voidElements = _List_fromArray(
 	['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
 var $hecrj$html_parser$Html$Parser$isVoidElement = function (name) {
@@ -21504,20 +21796,30 @@ var $author$project$Main$renderer = function (model) {
 			$elm$core$Result$map,
 			function (r) {
 				return A2(
-					$mdgriffith$elm_ui$Element$el,
+					$mdgriffith$elm_ui$Element$paragraph,
 					_List_Nil,
-					$mdgriffith$elm_ui$Element$html(r));
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$html(r)
+						]));
 			},
 			A2(
 				$elm$core$Result$map,
-				$elm$html$Html$div(_List_Nil),
+				$elm$html$Html$div(
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('trix-content')
+						])),
 				A2(
 					$elm$core$Result$map,
 					$hecrj$html_parser$Html$Parser$Util$toVirtualDom,
 					A2(
 						$elm$core$Result$map,
-						$elm$core$List$map($author$project$Main$processLinks),
-						$hecrj$html_parser$Html$Parser$run(model.htmlContent.html))))));
+						$elm$core$List$map($author$project$Main$resetFiguresStyle),
+						A2(
+							$elm$core$Result$map,
+							$elm$core$List$map($author$project$Main$processLinks),
+							$hecrj$html_parser$Html$Parser$run(model.htmlContent.html)))))));
 	return A2(
 		$mdgriffith$elm_ui$Element$el,
 		_List_fromArray(
@@ -21528,20 +21830,35 @@ var $author$project$Main$renderer = function (model) {
 };
 var $author$project$Main$view = function (model) {
 	return A2(
-		$mdgriffith$elm_ui$Element$layout,
+		$elm$html$Html$div,
 		_List_Nil,
-		A2(
-			$mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing(30)
-				]),
-			_List_fromArray(
-				[
-					$author$project$Main$editor(model),
-					$author$project$Main$renderer(model)
-				])));
+		_List_fromArray(
+			[
+				A3(
+				$elm$html$Html$node,
+				'style',
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(' .trix-content{\n                        text-align: justify;\n                    }\n                    \n                ')
+					])),
+				A2(
+				$mdgriffith$elm_ui$Element$layout,
+				_List_Nil,
+				A2(
+					$mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$width(
+							A2($mdgriffith$elm_ui$Element$maximum, 1000, $mdgriffith$elm_ui$Element$fill)),
+							$mdgriffith$elm_ui$Element$spacing(30)
+						]),
+					_List_fromArray(
+						[
+							$author$project$Main$editor(model),
+							$author$project$Main$renderer(model)
+						])))
+			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
@@ -21562,4 +21879,4 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 				},
 				A2($elm$json$Json$Decode$field, 'height', $elm$json$Json$Decode$int));
 		},
-		A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.HtmlContent":{"args":[],"type":"{ html : String.String, text : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"GetHtmlContent":["Main.HtmlContent"],"GetSelection":[],"GotSelection":["Json.Encode.Value"],"OpenInternalLinks":[],"InsertInternalLink":["String.String"],"OpenFontColorPicker":[],"SetTextColor":["String.String"],"Close":[],"DebugEvent":["Json.Encode.Value"],"NoOp":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));
+		A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.HtmlContent":{"args":[],"type":"{ html : String.String, text : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"GetHtmlContent":["Main.HtmlContent"],"GetSelection":[],"GotSelection":["Json.Encode.Value"],"OpenInternalLinks":[],"InsertInternalLink":["String.String"],"OpenFontColorPicker":[],"OpenBackgroundColorPicker":[],"SetTextColor":["String.String"],"SetBackgroundColor":["String.String"],"SetFont":["String.String"],"SetFontSize":["Basics.Int"],"ToogleJustify":[],"UndoStyle":[],"Close":[],"DebugEvent":["Json.Encode.Value"],"NoOp":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));
