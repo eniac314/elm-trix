@@ -52,6 +52,12 @@
       inheritable: true
      }
 
+    Trix.config.textAttributes.imgmeta = { 
+      style: { display: "none" },
+      tagName:"imgmeta",
+      inheritable: true
+     } 
+
     Trix.config.textAttributes.span = { tagName: "span" };
 
     Trix.config.textAttributes.foregroundColor = {
@@ -71,6 +77,16 @@
 
     Trix.config.textAttributes.float = {
         styleProperty: "float",
+        inheritable: 1
+    }
+
+    Trix.config.textAttributes.id = {
+        styleProperty: "animation-name",
+        inheritable: 1
+    }
+
+    Trix.config.textAttributes.class = {
+        styleProperty: "class",
         inheritable: 1
     }
 
@@ -105,17 +121,24 @@
       var element = document.querySelector("trix-editor");
       element.editor.insertString("Hello world");
       element.editor.insertLineBreak();
-      element.editor.insertHTML('<picContainer>test</picContainer>');
-      // element.editor.setSelectedRange([12, 16]);
-      // element.editor.activateAttribute("float", "left");
-      element.editor.insertLineBreak();
-      element.editor.insertHTML('<picContainer><img src="https://s14-eu5.startpage.com/wikioimage/5c5cdc254ff34ff9d620f47cb88c3d0b.png" alt="elm logo"></picContainer>');
+      // element.editor.insertHTML ('<imgmeta>test</imgmeta>');
+      // element.editor.addAttribute('color', '12');
+      // element.editor.insertString("Hello world");
+      element.editor.insertHTML('<img src="https://s14-eu5.startpage.com/wikioimage/5c5cdc254ff34ff9d620f47cb88c3d0b.png" alt="elm logo">');
       element.editor.insertLineBreak();
       // element.editor.setSelectedRange([17, 18]);
       // element.editor.activateAttribute("float", "left");
 
       element.editor.insertString("Content attachments are self-contained units of HTML that behave like files in the editor. They can be moved or removed, but not edited directly, and are represented by a single character position in the document model.To insert HTML as an attachment, create a Trix.Attachment with a content attribute and call the editor.insertAttachment method. The HTML inside a content attachment is not subject to Trix’s document conversion rules and will be rendered as-is.");
-       
+
+      element.editor.insertHTML('<img src="https://s14-eu5.startpage.com/wikioimage/5c5cdc254ff34ff9d620f47cb88c3d0b.png" alt="elm logo">');
+      element.editor.insertLineBreak();
+      // element.editor.setSelectedRange([17, 18]);
+      // element.editor.activateAttribute("float", "left");
+
+      element.editor.insertString("Content attachments are self-contained units of HTML that behave like files in the editor. They can be moved or removed, but not edited directly, and are represented by a single character position in the document model.To insert HTML as an attachment, create a Trix.Attachment with a content attribute and call the editor.insertAttachment method. The HTML inside a content attachment is not subject to Trix’s document conversion rules and will be rendered as-is.");
+
+        
      
       // element.editor.insertAttachment(attachment);
 
@@ -127,7 +150,7 @@
       // element.editor.deactivateAttribute("foregroundColor");
 
       // element.editor.addEventListener("trix-selection-change")
-    })
+    });
 
     var app = 
        Elm.Main.init({
@@ -142,8 +165,14 @@
       if(element){
         element.editor.recordUndoEntry("activate custom attribute: " + data.attribute);
         element.editor.setSelectedRange([data.selectionStart, data.selectionEnd]);
-        element.editor.activateAttribute(data.attribute, data.value);
+        // element.editor.setAttribute("id", "right");
+        
+        // var attachment = element.editor.composition.getAttachmentAtRange(element.editor.getSelectedRange());
+        // if(attachment){
+        //   attachment.setAttribute("id","test");
+        // }
 
+        element.editor.activateAttribute(data.attribute, data.value);
         sendSelection();
       }
     });
@@ -185,15 +214,32 @@
         // console.log(JSON.stringify(element.editor.getDocument()));
         // console.log(JSON.stringify(element.editor.getDocument().getCommonAttributesAtRange(element.editor.getSelectedRange())));
         var selectedRange = element.editor.getSelectedRange(); 
+
+        var attachments = element.editor.getDocument().getAttachments();
+
+        var ids = [];
+
+        for (i in attachments){
+          ids[i] = attachments[i]["id"];
+        } 
+
         var selection = 
           { start : selectedRange[0]
           , end : selectedRange[1]
-          , attrs : element.editor.getDocument().getCommonAttributesAtRange(selectedRange)
+          , attrs : getAttachmentId(element.editor, selectedRange) || element.editor.getDocument().getCommonAttributesAtRange(selectedRange)
+          , attachmentsIds: ids
           };
-        console.log(selection);
+        // console.log(selection);
         app.ports.selection.send(selection);
       }
-    }; 
+    };
+
+    function getAttachmentId(editor, range){
+      var attachment = editor.composition.getAttachmentAtRange(range);
+      if (attachment){
+        return {id : attachment["id"]};
+      }
+    } 
 
     console.log(Trix.config);
 

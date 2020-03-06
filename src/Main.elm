@@ -43,6 +43,9 @@ type alias Model =
     , selection : Maybe Selection
     , openedWidget : Maybe Widget
     , debugEvent : Maybe E.Value
+    , globalAttributes : Dict String String
+    , attachmentAttributes : Dict Int (Dict String String)
+    , attachmentsIds : List Int
     }
 
 
@@ -67,6 +70,9 @@ init flags =
       , selection = Nothing
       , openedWidget = Nothing
       , debugEvent = Nothing
+      , globalAttributes = Dict.empty
+      , attachmentAttributes = Dict.empty
+      , attachmentsIds = []
       }
     , Cmd.none
     )
@@ -124,7 +130,7 @@ type Msg
     | SetBackgroundColor String
     | SetFont String
     | SetFontSize Int
-    | ToogleJustify
+    | SetGlobalAttribute Bool ( String, String )
     | UndoStyle
     | Close
     | DebugEvent E.Value
@@ -142,8 +148,13 @@ update msg model =
 
         GotSelection value ->
             case D.decodeValue decodeSelection value of
-                Ok sel ->
-                    ( { model | selection = Just sel }, Cmd.none )
+                Ok ( sel, ids ) ->
+                    ( { model
+                        | selection = Just sel
+                        , attachmentsIds = ids
+                      }
+                    , Cmd.none
+                    )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -275,8 +286,8 @@ update msg model =
         SetFontSize n ->
             ( model, Cmd.none )
 
-        ToogleJustify ->
-            ( model, Cmd.none )
+        SetGlobalAttribute toogle attr ->
+            ( { model | globalAttributes = updateAttribute toogle attr model.globalAttributes }, Cmd.none )
 
         UndoStyle ->
             case model.selection of
@@ -310,10 +321,23 @@ view model =
         [ Html.node "style"
             []
             [ Html.text <|
-                """ .trix-content{
-                        text-align: justify;
-                    }
+                " .trix-content{"
+                    ++ stringifyAttributes model.globalAttributes
+                    ++ """ 
                     
+                    }
+                """
+                    ++ """ 
+
+                        .trix-content-editor figure{
+                            
+                        }
+                        .trix-content-editor figure:nth-of-type(2){
+                            opacity: 0.5;
+                            float: left;
+                            background-color: red;
+                            width: auto;
+                        }
                 """
             ]
         , Element.layout
@@ -323,14 +347,17 @@ view model =
                 , spacing 30
                 ]
                 [ editor model
-
-                --, el
-                --    []
-                --    (html <| Html.pre [] [ Html.text <| Debug.log "debug event: " (Debug.toString (Maybe.map decodeValue model.debugEvent)) ])
                 , renderer model
                 ]
             )
         ]
+
+
+stringifyAttributes : Dict String String -> String
+stringifyAttributes attributes =
+    Dict.toList attributes
+        |> List.map (\( attr, value ) -> attr ++ ": " ++ value ++ ";")
+        |> String.join " "
 
 
 editor model =
@@ -342,6 +369,14 @@ editor model =
 
                 Just { start, end } ->
                     Just (start == end)
+
+        canUpdateGlobalAttr =
+            case model.selection of
+                Nothing ->
+                    True
+
+                Just { start, end } ->
+                    start == end
 
         selectionAttrs =
             Maybe.map .attrs model.selection
@@ -408,6 +443,17 @@ editor model =
                     OpenInternalLinks
                     InsertInternalLink
                     [ "home", "contact" ]
+                , Input.button
+                    (buttonStyle canUpdateGlobalAttr)
+                    { onPress =
+                        if canUpdateGlobalAttr then
+                            Just (SetGlobalAttribute True ( "text-align", "justify" ))
+
+                        else
+                            Nothing
+                    , label =
+                        text "justify"
+                    }
                 , let
                     canUndoStyle =
                         selectionAttrs /= Just Dict.empty
@@ -443,6 +489,7 @@ trixEditor =
         [ on "trix-change" (D.map GetHtmlContent decodeEditorMarkup)
         , on "trix-selection-change" (D.map (always GetSelection) (D.succeed ()))
         , HtmlAttr.class "trix-content"
+        , HtmlAttr.class "trix-content-editor"
 
         --, on "trix-attachment-add" (Decode.map mapAttachmentToMsg decodeDroppedFile)
         --, HtmlAttr.attribute "white-space" "normal"
@@ -534,6 +581,25 @@ resetFiguresStyle node =
             Comment value
 
 
+updateAttribute : Bool -> ( String, String ) -> Dict String String -> Dict String String
+updateAttribute toogle ( attr, value ) attributes =
+    Dict.update
+        attr
+        (\mbVal ->
+            case mbVal of
+                Just val ->
+                    if toogle then
+                        Nothing
+
+                    else
+                        Just value
+
+                Nothing ->
+                    Just value
+        )
+        attributes
+
+
 
 --mapNode : Html.Parser.Node -> (Html.Parser.Node -> Html.Parser.Node) -> Html.Parser.Node
 --mapNode node =
@@ -560,6 +626,8 @@ decodeSelection =
         decodeAttrValue =
             D.oneOf
                 [ D.string
+                , D.int
+                    |> D.map String.fromInt
                 , D.bool
                     |> D.andThen
                         (\b ->
@@ -572,10 +640,11 @@ decodeSelection =
                 , D.succeed "unknown"
                 ]
     in
-    D.map3 (\start end attrs -> Selection start end attrs)
+    D.map4 (\start end attrs ids -> ( Selection start end attrs, ids ))
         (D.field "start" D.int)
         (D.field "end" D.int)
         (D.field "attrs" (D.map Dict.fromList (D.keyValuePairs decodeAttrValue)))
+        (D.field "attachmentsIds" (D.list D.int))
 
 
 

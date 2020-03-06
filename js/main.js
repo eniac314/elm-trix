@@ -10674,7 +10674,10 @@ var $author$project$Main$HtmlContent = F2(
 var $author$project$Main$init = function (flags) {
 	return _Utils_Tuple2(
 		{
+			attachmentAttributes: $elm$core$Dict$empty,
+			attachmentsIds: _List_Nil,
 			debugEvent: $elm$core$Maybe$Nothing,
+			globalAttributes: $elm$core$Dict$empty,
 			htmlContent: A2($author$project$Main$HtmlContent, '', ''),
 			openedWidget: $elm$core$Maybe$Nothing,
 			selection: $elm$core$Maybe$Nothing
@@ -10946,11 +10949,13 @@ var $author$project$Main$Selection = F3(
 		return {attrs: attrs, end: end, start: start};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $elm$json$Json$Decode$map4 = _Json_map4;
 var $author$project$Main$decodeSelection = function () {
 	var decodeAttrValue = $elm$json$Json$Decode$oneOf(
 		_List_fromArray(
 			[
 				$elm$json$Json$Decode$string,
+				A2($elm$json$Json$Decode$map, $elm$core$String$fromInt, $elm$json$Json$Decode$int),
 				A2(
 				$elm$json$Json$Decode$andThen,
 				function (b) {
@@ -10959,11 +10964,13 @@ var $author$project$Main$decodeSelection = function () {
 				$elm$json$Json$Decode$bool),
 				$elm$json$Json$Decode$succeed('unknown')
 			]));
-	return A4(
-		$elm$json$Json$Decode$map3,
-		F3(
-			function (start, end, attrs) {
-				return A3($author$project$Main$Selection, start, end, attrs);
+	return A5(
+		$elm$json$Json$Decode$map4,
+		F4(
+			function (start, end, attrs, ids) {
+				return _Utils_Tuple2(
+					A3($author$project$Main$Selection, start, end, attrs),
+					ids);
 			}),
 		A2($elm$json$Json$Decode$field, 'start', $elm$json$Json$Decode$int),
 		A2($elm$json$Json$Decode$field, 'end', $elm$json$Json$Decode$int),
@@ -10973,7 +10980,11 @@ var $author$project$Main$decodeSelection = function () {
 			A2(
 				$elm$json$Json$Decode$map,
 				$elm$core$Dict$fromList,
-				$elm$json$Json$Decode$keyValuePairs(decodeAttrValue))));
+				$elm$json$Json$Decode$keyValuePairs(decodeAttrValue))),
+		A2(
+			$elm$json$Json$Decode$field,
+			'attachmentsIds',
+			$elm$json$Json$Decode$list($elm$json$Json$Decode$int)));
 }();
 var $elm$json$Json$Encode$null = _Json_encodeNull;
 var $author$project$Main$getSelection = _Platform_outgoingPort(
@@ -10983,6 +10994,23 @@ var $author$project$Main$getSelection = _Platform_outgoingPort(
 	});
 var $author$project$Main$insertHtml = _Platform_outgoingPort('insertHtml', $elm$core$Basics$identity);
 var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Main$updateAttribute = F3(
+	function (toogle, _v0, attributes) {
+		var attr = _v0.a;
+		var value = _v0.b;
+		return A3(
+			$elm$core$Dict$update,
+			attr,
+			function (mbVal) {
+				if (mbVal.$ === 'Just') {
+					var val = mbVal.a;
+					return toogle ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(value);
+				} else {
+					return $elm$core$Maybe$Just(value);
+				}
+			},
+			attributes);
+	});
 var $author$project$Main$webColors = $elm$core$Dict$fromList(
 	_List_fromArray(
 		[
@@ -11144,11 +11172,14 @@ var $author$project$Main$update = F2(
 				var value = msg.a;
 				var _v1 = A2($elm$json$Json$Decode$decodeValue, $author$project$Main$decodeSelection, value);
 				if (_v1.$ === 'Ok') {
-					var sel = _v1.a;
+					var _v2 = _v1.a;
+					var sel = _v2.a;
+					var ids = _v2.b;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
+								attachmentsIds: ids,
 								selection: $elm$core$Maybe$Just(sel)
 							}),
 						$elm$core$Platform$Cmd$none);
@@ -11173,11 +11204,11 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'InsertInternalLink':
 				var url = msg.a;
-				var _v2 = model.selection;
-				if (_v2.$ === 'Just') {
-					var start = _v2.a.start;
-					var end = _v2.a.end;
-					var attrs = _v2.a.attrs;
+				var _v3 = model.selection;
+				if (_v3.$ === 'Just') {
+					var start = _v3.a.start;
+					var end = _v3.a.end;
+					var attrs = _v3.a.attrs;
 					if (!_Utils_eq(start, end)) {
 						var selected = A3($elm$core$String$slice, start, end, model.htmlContent.text);
 						var link = '<a href=internal:' + (url + ('>' + (selected + '</>')));
@@ -11228,11 +11259,11 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'SetTextColor':
 				var color = msg.a;
-				var _v3 = model.selection;
-				if (_v3.$ === 'Just') {
-					var start = _v3.a.start;
-					var end = _v3.a.end;
-					var attrs = _v3.a.attrs;
+				var _v4 = model.selection;
+				if (_v4.$ === 'Just') {
+					var start = _v4.a.start;
+					var end = _v4.a.end;
+					var attrs = _v4.a.attrs;
 					var data = $elm$json$Json$Encode$object(
 						_List_fromArray(
 							[
@@ -11263,11 +11294,11 @@ var $author$project$Main$update = F2(
 				}
 			case 'SetBackgroundColor':
 				var color = msg.a;
-				var _v4 = model.selection;
-				if (_v4.$ === 'Just') {
-					var start = _v4.a.start;
-					var end = _v4.a.end;
-					var attrs = _v4.a.attrs;
+				var _v5 = model.selection;
+				if (_v5.$ === 'Just') {
+					var start = _v5.a.start;
+					var end = _v5.a.end;
+					var attrs = _v5.a.attrs;
 					var data = $elm$json$Json$Encode$object(
 						_List_fromArray(
 							[
@@ -11298,11 +11329,11 @@ var $author$project$Main$update = F2(
 				}
 			case 'SetFont':
 				var font = msg.a;
-				var _v5 = model.selection;
-				if (_v5.$ === 'Just') {
-					var start = _v5.a.start;
-					var end = _v5.a.end;
-					var attrs = _v5.a.attrs;
+				var _v6 = model.selection;
+				if (_v6.$ === 'Just') {
+					var start = _v6.a.start;
+					var end = _v6.a.end;
+					var attrs = _v6.a.attrs;
 					var data = $elm$json$Json$Encode$object(
 						_List_fromArray(
 							[
@@ -11330,14 +11361,22 @@ var $author$project$Main$update = F2(
 			case 'SetFontSize':
 				var n = msg.a;
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-			case 'ToogleJustify':
-				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			case 'SetGlobalAttribute':
+				var toogle = msg.a;
+				var attr = msg.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							globalAttributes: A3($author$project$Main$updateAttribute, toogle, attr, model.globalAttributes)
+						}),
+					$elm$core$Platform$Cmd$none);
 			case 'UndoStyle':
-				var _v6 = model.selection;
-				if (_v6.$ === 'Just') {
-					var start = _v6.a.start;
-					var end = _v6.a.end;
-					var attrs = _v6.a.attrs;
+				var _v7 = model.selection;
+				if (_v7.$ === 'Just') {
+					var start = _v7.a.start;
+					var end = _v7.a.end;
+					var attrs = _v7.a.attrs;
 					var data = $elm$json$Json$Encode$object(
 						_List_fromArray(
 							[
@@ -16710,6 +16749,10 @@ var $author$project$Main$SetBackgroundColor = function (a) {
 var $author$project$Main$SetFont = function (a) {
 	return {$: 'SetFont', a: a};
 };
+var $author$project$Main$SetGlobalAttribute = F2(
+	function (a, b) {
+		return {$: 'SetGlobalAttribute', a: a, b: b};
+	});
 var $author$project$Main$SetTextColor = function (a) {
 	return {$: 'SetTextColor', a: a};
 };
@@ -17952,7 +17995,8 @@ var $author$project$Main$trixEditor = A3(
 				$elm$json$Json$Decode$map,
 				$elm$core$Basics$always($author$project$Main$GetSelection),
 				$elm$json$Json$Decode$succeed(_Utils_Tuple0))),
-			$elm$html$Html$Attributes$class('trix-content')
+			$elm$html$Html$Attributes$class('trix-content'),
+			$elm$html$Html$Attributes$class('trix-content-editor')
 		]),
 	_List_Nil);
 var $author$project$Main$webColorsReversed = $elm$core$Dict$fromList(
@@ -17966,12 +18010,12 @@ var $author$project$Main$webColorsReversed = $elm$core$Dict$fromList(
 		$elm$core$Dict$toList($author$project$Main$webColors)));
 var $author$project$Main$editor = function (model) {
 	var selectionCollapsed = function () {
-		var _v0 = model.selection;
-		if (_v0.$ === 'Nothing') {
+		var _v1 = model.selection;
+		if (_v1.$ === 'Nothing') {
 			return $elm$core$Maybe$Nothing;
 		} else {
-			var start = _v0.a.start;
-			var end = _v0.a.end;
+			var start = _v1.a.start;
+			var end = _v1.a.end;
 			return $elm$core$Maybe$Just(
 				_Utils_eq(start, end));
 		}
@@ -18015,6 +18059,16 @@ var $author$project$Main$editor = function (model) {
 				$elm$core$Maybe$andThen,
 				$elm$core$Dict$get('foregroundColor'),
 				selectionAttrs)));
+	var canUpdateGlobalAttr = function () {
+		var _v0 = model.selection;
+		if (_v0.$ === 'Nothing') {
+			return true;
+		} else {
+			var start = _v0.a.start;
+			var end = _v0.a.end;
+			return _Utils_eq(start, end);
+		}
+	}();
 	var backgroundColor = A2(
 		$elm$core$Maybe$andThen,
 		function (hex) {
@@ -18087,6 +18141,17 @@ var $author$project$Main$editor = function (model) {
 				$author$project$Main$InsertInternalLink,
 				_List_fromArray(
 					['home', 'contact'])),
+				A2(
+				$mdgriffith$elm_ui$Element$Input$button,
+				$author$project$Main$buttonStyle(canUpdateGlobalAttr),
+				{
+					label: $mdgriffith$elm_ui$Element$text('justify'),
+					onPress: canUpdateGlobalAttr ? $elm$core$Maybe$Just(
+						A2(
+							$author$project$Main$SetGlobalAttribute,
+							true,
+							_Utils_Tuple2('text-align', 'justify'))) : $elm$core$Maybe$Nothing
+				}),
 				function () {
 				var canUndoStyle = !_Utils_eq(
 					selectionAttrs,
@@ -21828,6 +21893,19 @@ var $author$project$Main$renderer = function (model) {
 			]),
 		content);
 };
+var $author$project$Main$stringifyAttributes = function (attributes) {
+	return A2(
+		$elm$core$String$join,
+		' ',
+		A2(
+			$elm$core$List$map,
+			function (_v0) {
+				var attr = _v0.a;
+				var value = _v0.b;
+				return attr + (': ' + (value + ';'));
+			},
+			$elm$core$Dict$toList(attributes)));
+};
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -21840,7 +21918,8 @@ var $author$project$Main$view = function (model) {
 				_List_Nil,
 				_List_fromArray(
 					[
-						$elm$html$Html$text(' .trix-content{\n                        text-align: justify;\n                    }\n                    \n                ')
+						$elm$html$Html$text(
+						' .trix-content{' + ($author$project$Main$stringifyAttributes(model.globalAttributes) + (' \n                    \n                    }\n                ' + ' \n\n                        .trix-content-editor figure{\n                            \n                        }\n                        .trix-content-editor figure:nth-of-type(2){\n                            opacity: 0.5;\n                            float: left;\n                            background-color: red;\n                            width: auto;\n                        }\n                ')))
 					])),
 				A2(
 				$mdgriffith$elm_ui$Element$layout,
@@ -21879,4 +21958,4 @@ _Platform_export({'Main':{'init':$author$project$Main$main(
 				},
 				A2($elm$json$Json$Decode$field, 'height', $elm$json$Json$Decode$int));
 		},
-		A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.HtmlContent":{"args":[],"type":"{ html : String.String, text : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"GetHtmlContent":["Main.HtmlContent"],"GetSelection":[],"GotSelection":["Json.Encode.Value"],"OpenInternalLinks":[],"InsertInternalLink":["String.String"],"OpenFontColorPicker":[],"OpenBackgroundColorPicker":[],"SetTextColor":["String.String"],"SetBackgroundColor":["String.String"],"SetFont":["String.String"],"SetFontSize":["Basics.Int"],"ToogleJustify":[],"UndoStyle":[],"Close":[],"DebugEvent":["Json.Encode.Value"],"NoOp":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));
+		A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$int)))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.HtmlContent":{"args":[],"type":"{ html : String.String, text : String.String }"}},"unions":{"Main.Msg":{"args":[],"tags":{"GetHtmlContent":["Main.HtmlContent"],"GetSelection":[],"GotSelection":["Json.Encode.Value"],"OpenInternalLinks":[],"InsertInternalLink":["String.String"],"OpenFontColorPicker":[],"OpenBackgroundColorPicker":[],"SetTextColor":["String.String"],"SetBackgroundColor":["String.String"],"SetFont":["String.String"],"SetFontSize":["Basics.Int"],"SetGlobalAttribute":["Basics.Bool","( String.String, String.String )"],"UndoStyle":[],"Close":[],"DebugEvent":["Json.Encode.Value"],"NoOp":[]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}}}}})}});}(this));
