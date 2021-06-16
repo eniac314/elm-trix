@@ -1,1 +1,0 @@
-@tommy now I found the time to continue with the Trix element. It seems to be sufficient to get the editor content with the “trix-document-change" so not every cursor movement triggers the event as with “trix-change”. However, I noticed that sometimes value is empty in the event data. innerHTML seems to have always a correct HTML representation.

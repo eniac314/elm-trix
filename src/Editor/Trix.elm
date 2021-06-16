@@ -4,7 +4,6 @@ port module Editor.Trix exposing (EditorResult(..), GlobalAttribute(..), Model, 
 
 import Browser exposing (..)
 import Browser.Events exposing (onMouseDown)
-import Codec as C exposing (..)
 import Dict exposing (..)
 import Element exposing (..)
 import Element.Background as Background
@@ -25,6 +24,7 @@ import Html.Parser.Util exposing (..)
 import Json.Decode as D
 import Json.Encode as E
 import Json.Value exposing (decodeValue)
+import Serialize as C exposing (..)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (cx, cy, d, points, r, rx, ry, x, x1, x2, y, y1, y2)
 
@@ -104,11 +104,15 @@ type alias TrixDocument =
 
 loadTrixDocument : String -> TrixDocument
 loadTrixDocument s =
-    case C.decodeString trixDocumentCodec s of
+    case C.decodeFromString trixDocumentCodec s of
         Ok td ->
             td
 
         Err e ->
+            --let
+            --    t =
+            --        Debug.log "" e
+            --in
             { globalAttributes = []
             , htmlOutput = s
             }
@@ -116,25 +120,29 @@ loadTrixDocument s =
 
 currentDoc : Model -> String
 currentDoc model =
-    serializeTrixDocument { globalAttributes = model.globalAttributes, htmlOutput = model.htmlOutput }
+    if (model.globalAttributes == []) && (model.htmlOutput == "") then
+        ""
+
+    else
+        serializeTrixDocument { globalAttributes = model.globalAttributes, htmlOutput = model.htmlOutput }
 
 
 serializeTrixDocument : TrixDocument -> String
 serializeTrixDocument td =
-    C.encodeToString 0 trixDocumentCodec td
+    C.encodeToString trixDocumentCodec td
 
 
-trixDocumentCodec : C.Codec TrixDocument
+trixDocumentCodec : C.Codec e TrixDocument
 trixDocumentCodec =
-    C.object TrixDocument
-        |> C.field "globalAttributes" .globalAttributes (C.list globalAttributeCodec)
-        |> C.field "htmlOutput" .htmlOutput C.string
-        |> C.buildObject
+    C.record TrixDocument
+        |> C.field .globalAttributes (C.list globalAttributeCodec)
+        |> C.field .htmlOutput C.string
+        |> C.finishRecord
 
 
-globalAttributeCodec : C.Codec GlobalAttribute
+globalAttributeCodec : C.Codec e GlobalAttribute
 globalAttributeCodec =
-    C.custom
+    C.customType
         (\fAlignRight fAlignLeft fBackgroundColor fBorder fFont fFontColor fFontSize fFontAlignLeft fFontAlignRight fCenter fJustify fBold fItalic fOther value ->
             case value of
                 AlignRight ->
@@ -179,35 +187,35 @@ globalAttributeCodec =
                 Other attr val ->
                     fOther attr val
         )
-        |> C.variant0 "AlignRight" AlignRight
-        |> C.variant0 "AlignLeft" AlignLeft
-        |> C.variant1 "BackgroundColor" BackgroundColor colorCodec
-        |> C.variant0 "Border" Border
-        |> C.variant1 "Font" Font C.string
-        |> C.variant1 "FontColor" FontColor colorCodec
-        |> C.variant1 "FontSize" FontSize C.int
-        |> C.variant0 "FontAlignLeft" FontAlignLeft
-        |> C.variant0 "FontAlignRight" FontAlignRight
-        |> C.variant0 "Center" Center
-        |> C.variant0 "Justify" Justify
-        |> C.variant0 "Bold" Bold
-        |> C.variant0 "Italic" Italic
-        |> C.variant2 "Other" Other C.string C.string
-        |> C.buildCustom
+        |> C.variant0 AlignRight
+        |> C.variant0 AlignLeft
+        |> C.variant1 BackgroundColor colorCodec
+        |> C.variant0 Border
+        |> C.variant1 Font C.string
+        |> C.variant1 FontColor colorCodec
+        |> C.variant1 FontSize C.int
+        |> C.variant0 FontAlignLeft
+        |> C.variant0 FontAlignRight
+        |> C.variant0 Center
+        |> C.variant0 Justify
+        |> C.variant0 Bold
+        |> C.variant0 Italic
+        |> C.variant2 Other C.string C.string
+        |> C.finishCustomType
 
 
 type alias PickedColor =
     { r : Int, g : Int, b : Int, a : Float }
 
 
-colorCodec : Codec PickedColor
+colorCodec : Codec e PickedColor
 colorCodec =
-    C.object PickedColor
-        |> C.field "r" .r C.int
-        |> C.field "g" .g C.int
-        |> C.field "b" .b C.int
-        |> C.field "a" .a C.float
-        |> C.buildObject
+    C.record PickedColor
+        |> C.field .r C.int
+        |> C.field .g C.int
+        |> C.field .b C.int
+        |> C.field .a C.float
+        |> C.finishRecord
 
 
 type alias HtmlOutput =
